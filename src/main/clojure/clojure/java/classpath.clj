@@ -13,7 +13,7 @@
 ;; remove this notice, or any other, from this software.
 
 
-(ns 
+(ns
   ^{:author "Stuart Sierra",
      :doc "Utilities for dealing with the JVM's classpath"}
   clojure.java.classpath
@@ -38,20 +38,23 @@
        (filter #(not (.isDirectory ^JarEntry %))
                (enumeration-seq (.entries jar-file)))))
 
+(defn classloader-paths
+  "Returns a sequence of File paths for a URLClassLoader."
+  [loader]
+  (when (instance? URLClassLoader loader)
+    (map #(File. (.getPath ^URL %)) (.getURLs ^URLClassLoader loader))))
+
+
 (defn system-classpath
   "Returns a sequence of File paths from the 'java.class.path' system
   property."
   []
-  (map #(File. ^String %)
-       (.split (System/getProperty "java.class.path")
-               (System/getProperty "path.separator"))))
+  (classloader-paths (.getClassLoader clojure.lang.RT)))
 
 (defn clojure-classpath
   "Returns a sequence of File paths from Clojure's base classloader."
   []
-  (let [loader (clojure.lang.RT/baseLoader)]
-    (when (instance? URLClassLoader loader)
-      (map #(File. (.getPath ^URL %)) (.getURLs ^URLClassLoader loader)))))
+  (classloader-paths (clojure.lang.RT/baseLoader)))
 
 (defn classpath
   "Returns a sequence of File objects of the elements on the
